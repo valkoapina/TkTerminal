@@ -5,8 +5,8 @@ import serial.serialutil
 
 
 class _PortSettingsFrame(tk.LabelFrame):
-    _XPADDING=5
-    _YPADDING=5
+    _XPADDING = 5
+    _YPADDING = 5
 
     def __init__(self, parent, *args, **kwargs):
         tk.LabelFrame.__init__(self, parent, *args, **kwargs)
@@ -75,11 +75,15 @@ class _ConclusionFrame(tk.Frame):
         self._save_button.grid(row=0, column=2, padx=25, pady=(25, 0))
 
     def _cancel_button_pressed(self):
-        self._parent.state('withdrawn')
+        self._close()
 
     def _save_button_pressed(self):
-        self._parent.state('withdrawn')
+        self._close()
         self._settings_saved_callback()
+
+    def _close(self):
+        self._parent.state('withdrawn')
+        self._parent.grab_release()
 
 
 class Settings:
@@ -88,7 +92,9 @@ class Settings:
         self._settings_changed_callback = settings_changed_callback
         self.settings = dict(port_settings={})
 
+        self._parent.wm_title('Settings')
         self._parent.resizable(width=False, height=False)
+        self._parent.protocol('WM_DELETE_WINDOW', self._on_exit)
 
         self._port_settings_frame = _PortSettingsFrame(parent, text='Port settings', relief=tk.SOLID, borderwidth=1)
         self._port_settings_frame.pack(fill=tk.Y)
@@ -105,10 +111,17 @@ class Settings:
         self.settings['port_settings']['bytesize'] = self._port_settings_frame.bytesize_list.get()
         self.settings['port_settings']['stopbits'] = self._port_settings_frame.stopbits_list.get()
 
-    def open(self):
+    def open(self, root):
         self._port_settings_frame.port_list['values'] = self._port_settings_frame.get_port_list()
+        self._parent.transient(root)
+        self._parent.grab_set()
         self._parent.lift()
         self._parent.state('normal')
+
+        # Center window to parent window
+        xposition = root.winfo_rootx() + root.winfo_width() / 2 - self._parent.winfo_width() / 2
+        yposition = root.winfo_rooty() + root.winfo_height() / 2 - self._parent.winfo_height() / 2
+        self._parent.geometry("+%d+%d" % (xposition, yposition))
 
     def close(self):
         pass
@@ -137,3 +150,7 @@ class Settings:
             if value == parity_name:
                 return key
         return None
+
+    def _on_exit(self):
+        self._parent.state('withdrawn')
+        self._parent.grab_release()

@@ -50,8 +50,9 @@ class SerialConnection:
     def open(self, port='loop://', baudrate=9600, parity=PARITY_NONE, bytesize=EIGHTBITS, stopbits=STOPBITS_ONE,
              timeout=10):
         try:
-            self.serial_connection = serial.serial_for_url(port, baudrate=baudrate, parity=parity, bytesize=bytesize,
-                                                           stopbits=stopbits, timeout=timeout)
+            self.serial_connection = serial.serial_for_url(port, baudrate=baudrate, parity=parity,
+                                                           bytesize=int(bytesize), stopbits=int(stopbits),
+                                                           timeout=timeout)
             self.reader_thread = ReaderThread(self.serial_connection,
                                               lambda: Protocol(self.data_subscriber, self.connection_state_subscriber))
             self.reader_thread.start()

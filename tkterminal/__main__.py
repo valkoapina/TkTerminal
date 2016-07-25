@@ -6,9 +6,10 @@ from settings import *
 
 
 class _Control(tk.Frame):
-    def __init__(self, window, settings, serial_connection, *args, **kwargs):
-        tk.Frame.__init__(self, window, *args, **kwargs)
-        self.settings = settings
+    def __init__(self, parent, settings, serial_connection, *args, **kwargs):
+        tk.Frame.__init__(self, parent, *args, **kwargs)
+        self._parent = parent
+        self._settings = settings
         self._serial_connection = serial_connection
 
         self.connection_button = ttk.Button(self, text='Open', command=self._connection_button_open_)
@@ -17,14 +18,15 @@ class _Control(tk.Frame):
         self.settings_button.grid(row=0, column=2, padx=25, pady=(25, 0))
 
     def _connection_button_open_(self):
-        self._serial_connection.open(port=self.settings.get('port'), baudrate=self.settings.get('baudrate'),
-                                    parity=self.settings.get('parity'), timeout=10)
+        self._serial_connection.open(port=self._settings.get('port'), baudrate=self._settings.get('baudrate'),
+                                     parity=self._settings.get('parity'), bytesize=self._settings.get('bytesize'),
+                                     stopbits=self._settings.get('stopbits'), timeout=10)
 
     def _connection_button_close_(self):
         self._serial_connection.close()
 
     def _open_settings_window_(self):
-        self.settings.open()
+        self._settings.open(self._parent)
 
     def update(self, connection_state):
         if connection_state is True:
@@ -56,21 +58,21 @@ class _Terminal(tk.Frame):
 
 
 class GUI:
-    def __init__(self, window, serial_connection):
-        self._window = window
+    def __init__(self, parent, serial_connection):
+        self._parent = parent
         self.serial_connection = serial_connection
         self.connection_state = False
         self.queue = Queue()
         self.serial_connection.subscribe(self._received_data_, self._connection_state_)
 
-        settings_window = tk.Toplevel(window)
+        settings_window = tk.Toplevel(self._parent)
         settings_window.state('withdrawn')
         self.settings = Settings(settings_window, self._settings_changed)
 
-        self.control_frame = _Control(window, self.settings, serial_connection)
+        self.control_frame = _Control(self._parent, self.settings, serial_connection)
         self.control_frame.pack(fill=tk.X)
 
-        self.terminal_frame = _Terminal(window, serial_connection)
+        self.terminal_frame = _Terminal(self._parent, serial_connection)
         self.terminal_frame.pack(fill=tk.BOTH, expand=True)
 
         self._periodic_call_()
@@ -79,7 +81,7 @@ class GUI:
         if self.queue.empty() is False:
             self._update_text_terminal_(self.queue.get(0))
         self.control_frame.update(self.connection_state)
-        self._window.after(10, self._periodic_call_)
+        self._parent.after(10, self._periodic_call_)
 
     def _received_data_(self, data):
         self.queue.put_nowait(data)
@@ -94,7 +96,8 @@ class GUI:
         if self.connection_state is True:
             self.serial_connection.close()
         self.serial_connection.open(port=self.settings.get('port'), baudrate=self.settings.get('baudrate'),
-                                    parity=self.settings.get('parity'), timeout=10)
+                                    parity=self.settings.get('parity'), bytesize=self.settings.get('bytesize'),
+                                    stopbits=self.settings.get('stopbits'), timeout=10)
 
 
 def main(args=None):
