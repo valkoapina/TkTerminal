@@ -13,8 +13,10 @@ class _Control(tk.Frame):
         self._serial_connection = serial_connection
 
         self.connection_button = ttk.Button(self, text='Open', command=self._connection_button_open_)
-        self.connection_button.grid(row=0, column=1, padx=(5, 5), pady=(5, 0))
+        self.connection_button.grid(row=0, column=0, padx=(5, 5), pady=(5, 0))
         self.settings_button = ttk.Button(self, text='Settings', command=self._open_settings_window_)
+        self.settings_button.grid(row=0, column=1, padx=(5, 5), pady=(5, 0))
+        self.settings_button = ttk.Button(self, text='Exit', command=self._exit)
         self.settings_button.grid(row=0, column=2, padx=(5, 5), pady=(5, 0))
 
     def _connection_button_open_(self):
@@ -27,6 +29,13 @@ class _Control(tk.Frame):
 
     def _open_settings_window_(self):
         self._settings.open(self._parent)
+
+    def _exit(self):
+        try:
+            self._serial_connection.close()
+        except Exception as e:
+            pass
+        self._parent.destroy()
 
     def update(self, connection_state):
         if connection_state is True:
