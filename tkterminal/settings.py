@@ -4,35 +4,48 @@ import serial.tools.list_ports
 import serial.serialutil
 
 
-class _PortSettingsFrame(tk.Frame):
+class _PortSettingsFrame(tk.LabelFrame):
+    _XPADDING=5
+    _YPADDING=5
+
     def __init__(self, parent, *args, **kwargs):
-        tk.Frame.__init__(self, parent, *args, **kwargs)
+        tk.LabelFrame.__init__(self, parent, *args, **kwargs)
         self._parent = parent
 
+        self.port_list_label = ttk.Label(self, text='Port')
+        self.port_list_label.grid(row=0, column=0, sticky=tk.W)
         self.port_list = ttk.Combobox(self, values=self.get_port_list())
-        self.port_list.grid(row=0, column=0, padx=25, pady=(5, 0))
+        self.port_list.grid(row=0, column=1, padx=(0, self._XPADDING), pady=(self._YPADDING, 0))
         self.port_list.current(0)
         self.port_list.state(statespec=('readonly',))
 
+        self.baudrate_list_label = ttk.Label(self, text='Baud rate')
+        self.baudrate_list_label.grid(row=1, column=0, sticky=tk.W)
         self.baudrate_list = ttk.Combobox(self, values=serial.serialutil.SerialBase.BAUDRATES)
-        self.baudrate_list.grid(row=1, column=0, padx=25)
+        self.baudrate_list.grid(row=1, column=1, padx=(0, self._XPADDING))
         self.baudrate_list.current(0)
         self.baudrate_list.state(statespec=('readonly',))
 
-        self.parity_list = ttk.Combobox(self, values=self._get_parity_names())
-        self.parity_list.grid(row=2, column=0, padx=25)
-        self.parity_list.current(0)
-        self.parity_list.state(statespec=('readonly',))
-
+        self.bytesize_list_label = ttk.Label(self, text='Data bits')
+        self.bytesize_list_label.grid(row=2, column=0, sticky=tk.W)
         self.bytesize_list = ttk.Combobox(self, values=serial.serialutil.SerialBase.BYTESIZES)
-        self.bytesize_list.grid(row=3, column=0, padx=25)
+        self.bytesize_list.grid(row=2, column=1, padx=(0, self._XPADDING))
         self.bytesize_list.current(len(self.bytesize_list['values']) - 1)
         self.bytesize_list.state(statespec=('readonly',))
 
+        self.stopbits_list_label = ttk.Label(self, text='Stop bits')
+        self.stopbits_list_label.grid(row=3, column=0, sticky=tk.W)
         self.stopbits_list = ttk.Combobox(self, values=serial.serialutil.SerialBase.STOPBITS)
-        self.stopbits_list.grid(row=4, column=0, padx=25, pady=(0, 5))
+        self.stopbits_list.grid(row=3, column=1, padx=(0, self._XPADDING))
         self.stopbits_list.current(0)
         self.stopbits_list.state(statespec=('readonly',))
+
+        self.parity_list_label = ttk.Label(self, text='Parity')
+        self.parity_list_label.grid(row=4, column=0, sticky=tk.W)
+        self.parity_list = ttk.Combobox(self, values=self._get_parity_names())
+        self.parity_list.grid(row=4, column=1, padx=(0, self._XPADDING), pady=(0, self._YPADDING))
+        self.parity_list.current(0)
+        self.parity_list.state(statespec=('readonly',))
 
     @staticmethod
     def get_port_list():
@@ -75,7 +88,9 @@ class Settings:
         self._settings_changed_callback = settings_changed_callback
         self.settings = dict(port_settings={})
 
-        self._port_settings_frame = _PortSettingsFrame(parent, relief=tk.SOLID, borderwidth=1)
+        self._parent.resizable(width=False, height=False)
+
+        self._port_settings_frame = _PortSettingsFrame(parent, text='Port settings', relief=tk.SOLID, borderwidth=1)
         self._port_settings_frame.pack(fill=tk.Y)
         self.conclusion_frame = _ConclusionFrame(parent, self._settings_saved)
         self.conclusion_frame.pack(fill=tk.BOTH)
