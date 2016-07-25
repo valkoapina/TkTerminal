@@ -13,9 +13,9 @@ class _Control(tk.Frame):
         self._serial_connection = serial_connection
 
         self.connection_button = ttk.Button(self, text='Open', command=self._connection_button_open_)
-        self.connection_button.grid(row=0, column=1, padx=25, pady=(25, 0))
+        self.connection_button.grid(row=0, column=1, padx=(5, 5), pady=(5, 0))
         self.settings_button = ttk.Button(self, text='Settings', command=self._open_settings_window_)
-        self.settings_button.grid(row=0, column=2, padx=25, pady=(25, 0))
+        self.settings_button.grid(row=0, column=2, padx=(5, 5), pady=(5, 0))
 
     def _connection_button_open_(self):
         self._serial_connection.open(port=self._settings.get('port'), baudrate=self._settings.get('baudrate'),
@@ -35,26 +35,32 @@ class _Control(tk.Frame):
             self.connection_button.config(text='Open', command=self._connection_button_open_)
 
 
-class _Terminal(tk.Frame):
-    def __init__(self, window, serial_connection, *args, **kwargs):
-        tk.Frame.__init__(self, window, *args, **kwargs)
-        self._serial_connection = serial_connection
+class _TerminalReceive(tk.Frame):
+    def __init__(self, parent, *args, **kwargs):
+        tk.Frame.__init__(self, parent, *args, **kwargs)
 
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=1)
-        self.terminal_text = tk.Text(self, relief=tk.SUNKEN, borderwidth=3)
-        self.terminal_text.grid(row=0, column=0, sticky=tk.N + tk.S + tk.E + tk.W, padx=25, pady=25)
-
-        self.terminal_entry = ttk.Entry(self)
-        self.terminal_entry.grid(row=1, column=0, sticky=tk.E + tk.W, padx=25, pady=(0, 25))
-        self.send_button = ttk.Button(self, text='Send', command=self._send_button_clicked_)
-        self.send_button.grid(row=1, column=1, sticky=tk.E, padx=25, pady=(0, 25))
-
-    def _send_button_clicked_(self):
-        self._serial_connection.write(self.terminal_entry.get())
+        self._terminal_text = tk.Text(self, relief=tk.SUNKEN, borderwidth=3)
+        self._terminal_text.grid(row=0, column=0, sticky=tk.N + tk.S + tk.E + tk.W, padx=(5, 5), pady=(5, 5))
 
     def insert(self, data):
-        self.terminal_text.insert(tk.END, data)
+        self._terminal_text.insert(tk.END, data)
+
+
+class _TerminalSend(tk.Frame):
+    def __init__(self, parent, serial_connection, *args, **kwargs):
+        tk.Frame.__init__(self, parent, *args, **kwargs)
+        self._serial_connection = serial_connection
+
+        self.grid_columnconfigure(0, weight=1)
+        self._terminal_entry = ttk.Entry(self)
+        self._terminal_entry.grid(row=1, column=0, sticky=tk.E + tk.W, padx=(5, 5), pady=(0, 5))
+        self._send_button = ttk.Button(self, text='Send', command=self._send_button_clicked_)
+        self._send_button.grid(row=1, column=1, sticky=tk.E, padx=(0, 5), pady=(0, 5))
+
+    def _send_button_clicked_(self):
+        self._serial_connection.write(self._terminal_entry.get())
 
 
 class GUI:
@@ -65,6 +71,8 @@ class GUI:
         self.queue = Queue()
         self.serial_connection.subscribe(self._received_data_, self._connection_state_)
 
+        self._parent.wm_title('TkTerminal')
+
         settings_window = tk.Toplevel(self._parent)
         settings_window.state('withdrawn')
         self.settings = Settings(settings_window, self._settings_changed)
@@ -72,8 +80,11 @@ class GUI:
         self.control_frame = _Control(self._parent, self.settings, serial_connection)
         self.control_frame.pack(fill=tk.X)
 
-        self.terminal_frame = _Terminal(self._parent, serial_connection)
-        self.terminal_frame.pack(fill=tk.BOTH, expand=True)
+        self.terminal_receive_frame = _TerminalReceive(self._parent)
+        self.terminal_receive_frame.pack(fill=tk.BOTH, expand=True)
+
+        self.terminal_send_frame = _TerminalSend(self._parent, serial_connection)
+        self.terminal_send_frame.pack(fill=tk.X, expand=False)
 
         self._periodic_call_()
 
@@ -87,7 +98,7 @@ class GUI:
         self.queue.put_nowait(data)
 
     def _update_text_terminal_(self, data):
-        self.terminal_frame.insert(data)
+        self.terminal_receive_frame.insert(data)
 
     def _connection_state_(self, state):
         self.connection_state = state
