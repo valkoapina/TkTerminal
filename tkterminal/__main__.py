@@ -11,9 +11,19 @@ class _Control(tk.Frame):
         self._parent = parent
         self._settings = settings
         self._serial_connection = serial_connection
+        self._connection_button_open_text = ', '.join(
+            (' '.join((settings.get('port'), settings.get('baudrate'), 'bps')),
+             settings.get('bytesize') + settings.get('parity') + settings.get(
+                 'stopbits')))
 
-        self.connection_button = ttk.Button(self, text='Open', command=self._connection_button_open_)
-        self.connection_button.grid(row=0, column=0, padx=(5, 5), pady=(5, 0))
+        self._connection_button_closed_text = 'Disconnected - click to connect'
+
+        self.grid_columnconfigure(0, weight=1)
+
+        self._connection_button_text = tk.StringVar(value=self._connection_button_closed_text)
+        self.connection_button = ttk.Button(self, textvar=self._connection_button_text,
+                                            command=self._connection_button_open_)
+        self.connection_button.grid(row=0, column=0, padx=(5, 5), pady=(5, 0), sticky=tk.W + tk.E)
         self.settings_button = ttk.Button(self, text='Settings', command=self._open_settings_window_)
         self.settings_button.grid(row=0, column=1, padx=(5, 5), pady=(5, 0))
         self.settings_button = ttk.Button(self, text='Exit', command=self._exit)
@@ -39,9 +49,11 @@ class _Control(tk.Frame):
 
     def update(self, connection_state):
         if connection_state is True:
-            self.connection_button.config(text='Close', command=self._connection_button_close_)
+            self._connection_button_text.set(self._connection_button_open_text)
+            self.connection_button.config(command=self._connection_button_close_)
         else:
-            self.connection_button.config(text='Open', command=self._connection_button_open_)
+            self._connection_button_text.set(self._connection_button_closed_text)
+            self.connection_button.config(command=self._connection_button_open_)
 
 
 class _TerminalReceive(tk.Frame):
@@ -87,7 +99,7 @@ class GUI:
         self.settings = Settings(settings_window, self._settings_changed)
 
         self.control_frame = _Control(self._parent, self.settings, serial_connection)
-        self.control_frame.pack(fill=tk.X)
+        self.control_frame.pack(fill=tk.X, expand=False)
 
         self.terminal_receive_frame = _TerminalReceive(self._parent)
         self.terminal_receive_frame.pack(fill=tk.BOTH, expand=True)
@@ -101,7 +113,7 @@ class GUI:
         if self.queue.empty() is False:
             self._update_text_terminal_(self.queue.get(0))
         self.control_frame.update(self.connection_state)
-        self._parent.after(10, self._periodic_call_)
+        self._parent.after(100, self._periodic_call_)
 
     def _received_data_(self, data):
         self.queue.put_nowait(data)
