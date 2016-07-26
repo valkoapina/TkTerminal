@@ -11,15 +11,11 @@ class _Control(tk.Frame):
         self._parent = parent
         self._settings = settings
         self._serial_connection = serial_connection
-        self._connection_button_open_text = ', '.join(
-            (' '.join((settings.get('port'), settings.get('baudrate'), 'bps')),
-             settings.get('bytesize') + settings.get('parity') + settings.get(
-                 'stopbits')))
-        self._connection_button_closed_text = 'Disconnected - click to connect'
 
         self.grid_columnconfigure(0, weight=1)
 
-        self._connection_button_text = tk.StringVar(value=self._connection_button_closed_text)
+        self._connection_button_text = tk.StringVar(
+            value=self._create_connection_button_text(self._serial_connection.is_open()))
         self.connection_button = ttk.Button(self, textvar=self._connection_button_text,
                                             command=self._connection_button_open_)
         self.connection_button.grid(row=0, column=0, padx=(5, 5), pady=(5, 0), sticky=tk.W + tk.E)
@@ -33,7 +29,7 @@ class _Control(tk.Frame):
     def _connection_button_open_(self):
         self._serial_connection.open(port=self._settings.get('port'), baudrate=self._settings.get('baudrate'),
                                      parity=self._settings.get('parity'), bytesize=self._settings.get('bytesize'),
-                                     stopbits=self._settings.get('stopbits'), timeout=10)
+                                     stopbits=self._settings.get('stopbits'), timeout=1)
 
     def _connection_button_close_(self):
         self._serial_connection.close()
@@ -49,13 +45,24 @@ class _Control(tk.Frame):
         self._parent.destroy()
 
     def _update(self):
-        if self._serial_connection.is_open() is True:
-            self._connection_button_text.set(self._connection_button_open_text)
+        connection_state = self._serial_connection.is_open()
+        if connection_state is True:
             self.connection_button.config(command=self._connection_button_close_)
         else:
-            self._connection_button_text.set(self._connection_button_closed_text)
             self.connection_button.config(command=self._connection_button_open_)
+        self._connection_button_text.set(self._create_connection_button_text(connection_state))
         self._parent.after(100, self._update)
+
+    def _create_connection_button_text(self, connection_state):
+        text = ', '.join(
+            (' '.join((self._settings.get('port'), self._settings.get('baudrate'), 'bps')),
+             self._settings.get('bytesize') + self._settings.get('parity') + self._settings.get(
+                 'stopbits')))
+        if connection_state is True:
+            text += ' - connected'
+        else:
+            text += ' - disconnected'
+        return text
 
 
 class _TerminalReceive(tk.Frame):
