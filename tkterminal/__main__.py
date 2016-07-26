@@ -15,7 +15,6 @@ class _Control(tk.Frame):
             (' '.join((settings.get('port'), settings.get('baudrate'), 'bps')),
              settings.get('bytesize') + settings.get('parity') + settings.get(
                  'stopbits')))
-
         self._connection_button_closed_text = 'Disconnected - click to connect'
 
         self.grid_columnconfigure(0, weight=1)
@@ -28,6 +27,8 @@ class _Control(tk.Frame):
         self.settings_button.grid(row=0, column=1, padx=(5, 5), pady=(5, 0))
         self.settings_button = ttk.Button(self, text='Exit', command=self._exit)
         self.settings_button.grid(row=0, column=2, padx=(5, 5), pady=(5, 0))
+
+        self._update()
 
     def _connection_button_open_(self):
         self._serial_connection.open(port=self._settings.get('port'), baudrate=self._settings.get('baudrate'),
@@ -47,23 +48,33 @@ class _Control(tk.Frame):
             pass
         self._parent.destroy()
 
-    def update(self, connection_state):
-        if connection_state is True:
+    def _update(self):
+        if self._serial_connection.is_open() is True:
             self._connection_button_text.set(self._connection_button_open_text)
             self.connection_button.config(command=self._connection_button_close_)
         else:
             self._connection_button_text.set(self._connection_button_closed_text)
             self.connection_button.config(command=self._connection_button_open_)
+        self._parent.after(100, self._update)
 
 
 class _TerminalReceive(tk.Frame):
-    def __init__(self, parent, *args, **kwargs):
+    def __init__(self, parent, serial_connection, *args, **kwargs):
         tk.Frame.__init__(self, parent, *args, **kwargs)
+        self._parent = parent
+        self._serial_connection = serial_connection
 
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=1)
         self._terminal_text = tk.Text(self, relief=tk.SUNKEN, borderwidth=3)
         self._terminal_text.grid(row=0, column=0, sticky=tk.N + tk.S + tk.E + tk.W, padx=(5, 5), pady=(5, 5))
+
+        self._poll_received_data()
+
+    def _poll_received_data(self):
+        if self._serial_connection.is_open() is True:
+            self._terminal_text.insert(tk.END, self._serial_connection.read())
+        self._parent.after(100, self._poll_received_data)
 
     def insert(self, data):
         self._terminal_text.insert(tk.END, data)
@@ -88,9 +99,6 @@ class MainGui:
     def __init__(self, parent, serial_connection):
         self._parent = parent
         self.serial_connection = serial_connection
-        self.connection_state = False
-        self.queue = Queue()
-        self.serial_connection.subscribe(self._received_data_, self._connection_state_)
 
         self._parent.wm_title('TkTerminal')
 
@@ -98,34 +106,17 @@ class MainGui:
         settings_window.state('withdrawn')
         self.settings = Settings(settings_window, self._settings_changed)
 
-        self.control_frame = _Control(self._parent, self.settings, serial_connection)
+        self.control_frame = _Control(self._parent, self.settings, self.serial_connection)
         self.control_frame.pack(fill=tk.X, expand=False)
 
-        self.terminal_receive_frame = _TerminalReceive(self._parent)
+        self.terminal_receive_frame = _TerminalReceive(self._parent, self.serial_connection)
         self.terminal_receive_frame.pack(fill=tk.BOTH, expand=True)
 
-        self.terminal_send_frame = _TerminalSend(self._parent, serial_connection)
+        self.terminal_send_frame = _TerminalSend(self._parent, self.serial_connection)
         self.terminal_send_frame.pack(fill=tk.X, expand=False)
 
-        self._periodic_call_()
-
-    def _periodic_call_(self):
-        if self.queue.empty() is False:
-            self._update_text_terminal_(self.queue.get(0))
-        self.control_frame.update(self.connection_state)
-        self._parent.after(100, self._periodic_call_)
-
-    def _received_data_(self, data):
-        self.queue.put_nowait(data)
-
-    def _update_text_terminal_(self, data):
-        self.terminal_receive_frame.insert(data)
-
-    def _connection_state_(self, state):
-        self.connection_state = state
-
     def _settings_changed(self, settings):
-        if self.connection_state is True:
+        if self.serial_connection.is_open() is True:
             self.serial_connection.close()
         self.serial_connection.open(port=self.settings.get('port'), baudrate=self.settings.get('baudrate'),
                                     parity=self.settings.get('parity'), bytesize=self.settings.get('bytesize'),
@@ -137,7 +128,7 @@ def main(args=None):
     if args is None:
         args = sys.argv[1:]
 
-    serial_connection = SerialConnection()
+    serial_connection = create_serial_connection()
 
     root = tk.Tk()
     gui = MainGui(root, serial_connection)
