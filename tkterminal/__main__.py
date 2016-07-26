@@ -84,7 +84,7 @@ class _TerminalSend(tk.Frame):
         self._serial_connection.write(self._terminal_entry.get())
 
 
-class GUI:
+class MainGui:
     def __init__(self, parent, serial_connection):
         self._parent = parent
         self.serial_connection = serial_connection
@@ -140,7 +140,7 @@ def main(args=None):
     serial_connection = SerialConnection()
 
     root = tk.Tk()
-    gui = GUI(root, serial_connection)
+    gui = MainGui(root, serial_connection)
 
     root.mainloop()
 
