@@ -78,7 +78,7 @@ class _ThreadedSerialConnection:
 class _PollingSerialConnection:
     def __init__(self):
         self._serial_connection = None
-        self._line_ending = None
+        self._line_ending = ''
 
     @staticmethod
     def get_ports():
@@ -115,7 +115,10 @@ class _PollingSerialConnection:
         return self._serial_connection.read(size=self._serial_connection.in_waiting)
 
     def write(self, data):
-        self._serial_connection.write(data)
+        if self._line_ending == '':
+            self._serial_connection.write(data)
+        else:
+            self.write_line(data)
 
     def write_line(self, data):
         self._serial_connection.write(data + self._line_ending)

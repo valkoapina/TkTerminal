@@ -123,11 +123,12 @@ class MainGui:
         self.terminal_send_frame.pack(fill=tk.X, expand=False)
 
     def _settings_changed(self, settings):
+        self.serial_connection.set_line_ending(self.settings.get('append'))
         if self.serial_connection.is_open() is True:
             self.serial_connection.close()
         self.serial_connection.open(port=self.settings.get('port'), baudrate=self.settings.get('baudrate'),
                                     parity=self.settings.get('parity'), bytesize=self.settings.get('bytesize'),
-                                    stopbits=self.settings.get('stopbits'), timeout=10)
+                                    stopbits=self.settings.get('stopbits'), timeout=1)
 
 
 def main(args=None):
