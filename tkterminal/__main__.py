@@ -113,14 +113,17 @@ class MainGui:
         settings_window.state('withdrawn')
         self.settings = Settings(settings_window, self._settings_changed)
 
+        self._parent.grid_columnconfigure(0, weight=1)
+        self._parent.grid_rowconfigure(1, weight=1)
+
         self.control_frame = _Control(self._parent, self.settings, self.serial_connection)
-        self.control_frame.pack(fill=tk.X, expand=False)
+        self.control_frame.grid(row=0, column=0, sticky=tk.W + tk.E)
 
         self.terminal_receive_frame = _TerminalReceive(self._parent, self.serial_connection)
-        self.terminal_receive_frame.pack(fill=tk.BOTH, expand=True)
+        self.terminal_receive_frame.grid(row=1, column=0, sticky=tk.N + tk.S + tk.W + tk.E)
 
         self.terminal_send_frame = _TerminalSend(self._parent, self.serial_connection)
-        self.terminal_send_frame.pack(fill=tk.X, expand=False)
+        self.terminal_send_frame.grid(row=2, column=0, sticky=tk.W + tk.E)
 
     def _settings_changed(self, settings):
         self.serial_connection.set_line_ending(self.settings.get('append'))

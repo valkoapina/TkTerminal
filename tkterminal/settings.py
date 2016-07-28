@@ -74,7 +74,7 @@ class _TransmitSettingsFrame(tk.LabelFrame):
         self._selection = tk.IntVar(0)
         self._port_list = ttk.Radiobutton(self, text='Append nothing', variable=self._selection, value=0)
         self._port_list.grid(row=0, column=0, padx=(self._XPADDING, self._XPADDING), pady=(self._YPADDING, 0),
-                            sticky=tk.W)
+                             sticky=tk.W)
         self._port_list = ttk.Radiobutton(self, text='Append CR', variable=self._selection, value=1)
         self._port_list.grid(row=1, column=0, padx=(self._XPADDING, self._XPADDING), pady=(0, 0), sticky=tk.W)
         self._port_list = ttk.Radiobutton(self, text='Append LF', variable=self._selection, value=2)
@@ -83,7 +83,7 @@ class _TransmitSettingsFrame(tk.LabelFrame):
         self._port_list.grid(row=3, column=0, padx=(self._XPADDING, self._XPADDING), pady=(0, 0), sticky=tk.W)
         self._port_list = ttk.Radiobutton(self, text='Append LF-CR', variable=self._selection, value=4)
         self._port_list.grid(row=4, column=0, padx=(self._XPADDING, self._XPADDING), pady=(0, self._YPADDING),
-                            sticky=tk.W)
+                             sticky=tk.W)
 
     def get_selection(self):
         retvals = ['', '\r', '\n', '\r\n', '\n\r']
@@ -91,15 +91,18 @@ class _TransmitSettingsFrame(tk.LabelFrame):
 
 
 class _ConclusionFrame(tk.Frame):
+    _XPADDING = 5
+    _YPADDING = 5
+
     def __init__(self, parent, settings_saved_callback, *args, **kwargs):
         tk.Frame.__init__(self, parent, *args, **kwargs)
         self._parent = parent
         self._settings_saved_callback = settings_saved_callback
 
         self._cancel_button = ttk.Button(self, text='Cancel', command=self._cancel_button_pressed)
-        self._cancel_button.grid(row=0, column=1, padx=25, pady=(25, 0))
+        self._cancel_button.grid(row=0, column=0, padx=self._XPADDING, pady=(self._YPADDING, 0))
         self._save_button = ttk.Button(self, text='Save', command=self._save_button_pressed)
-        self._save_button.grid(row=0, column=2, padx=25, pady=(25, 0))
+        self._save_button.grid(row=0, column=1, padx=self._XPADDING, pady=(self._YPADDING, 0))
 
     def _cancel_button_pressed(self):
         self._close()
@@ -124,13 +127,12 @@ class Settings:
         self._parent.protocol('WM_DELETE_WINDOW', self._on_exit)
 
         self._port_settings_frame = _PortSettingsFrame(parent, text='Port settings', relief=tk.SOLID, borderwidth=1)
-        self._port_settings_frame.pack(side=tk.LEFT, anchor=tk.NW, padx=5, pady=5)
+        self._port_settings_frame.grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
         self._transmit_settings_frame = _TransmitSettingsFrame(parent, text='Transmitted data', relief=tk.SOLID,
                                                                borderwidth=1)
-        self._transmit_settings_frame.pack(side=tk.TOP, anchor=tk.NW, padx=5, pady=5)
+        self._transmit_settings_frame.grid(row=0, column=1, padx=5, pady=5, sticky=tk.W)
         self._conclusion_frame = _ConclusionFrame(parent, self._settings_saved)
-        self._conclusion_frame.pack(side=tk.BOTTOM, anchor=tk.SE)
-
+        self._conclusion_frame.grid(row=1, column=1, sticky=tk.E)
         self._update_settings()
 
     def _update_settings(self):
