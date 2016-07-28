@@ -35,7 +35,7 @@ class _Control(tk.Frame):
         self._serial_connection.close()
 
     def _open_settings_window_(self):
-        self._settings.open(self._parent)
+        self._settings.open()
 
     def _exit(self):
         try:
@@ -102,27 +102,25 @@ class _TerminalSend(tk.Frame):
         self._serial_connection.write(self._terminal_entry.get())
 
 
-class MainGui:
-    def __init__(self, parent, serial_connection):
-        self._parent = parent
+class MainGui(tk.Tk):
+    def __init__(self, serial_connection):
+        tk.Tk.__init__(self)
         self.serial_connection = serial_connection
 
-        self._parent.wm_title('TkTerminal')
+        self.wm_title('TkTerminal')
 
-        settings_window = tk.Toplevel(self._parent)
-        settings_window.state('withdrawn')
-        self.settings = Settings(settings_window, self._settings_changed)
+        self.settings = Settings(self, self._settings_changed)
 
-        self._parent.grid_columnconfigure(0, weight=1)
-        self._parent.grid_rowconfigure(1, weight=1)
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_rowconfigure(1, weight=1)
 
-        self.control_frame = _Control(self._parent, self.settings, self.serial_connection)
+        self.control_frame = _Control(self, self.settings, self.serial_connection)
         self.control_frame.grid(row=0, column=0, sticky=tk.W + tk.E)
 
-        self.terminal_receive_frame = _TerminalReceive(self._parent, self.serial_connection)
+        self.terminal_receive_frame = _TerminalReceive(self, self.serial_connection)
         self.terminal_receive_frame.grid(row=1, column=0, sticky=tk.N + tk.S + tk.W + tk.E)
 
-        self.terminal_send_frame = _TerminalSend(self._parent, self.serial_connection)
+        self.terminal_send_frame = _TerminalSend(self, self.serial_connection)
         self.terminal_send_frame.grid(row=2, column=0, sticky=tk.W + tk.E)
 
     def _settings_changed(self, settings):
@@ -140,11 +138,9 @@ def main(args=None):
         args = sys.argv[1:]
 
     serial_connection = create_serial_connection()
+    gui = MainGui(serial_connection)
 
-    root = tk.Tk()
-    gui = MainGui(root, serial_connection)
-
-    root.mainloop()
+    gui.mainloop()
 
 
 if __name__ == "__main__":

@@ -116,22 +116,24 @@ class _ConclusionFrame(tk.Frame):
         self._parent.grab_release()
 
 
-class Settings:
+class Settings(tk.Toplevel):
     def __init__(self, parent, settings_changed_callback, *args, **kwargs):
+        tk.Toplevel.__init__(self, parent)
         self._parent = parent
         self._settings_changed_callback = settings_changed_callback
         self.settings = dict(port_settings={}, transmit_settings={})
 
-        self._parent.wm_title('Settings')
-        self._parent.resizable(width=False, height=False)
-        self._parent.protocol('WM_DELETE_WINDOW', self._on_exit)
+        self.state('withdrawn')
+        self.wm_title('Settings')
+        self.resizable(width=False, height=False)
+        self.protocol('WM_DELETE_WINDOW', self._on_exit)
 
-        self._port_settings_frame = _PortSettingsFrame(parent, text='Port settings', relief=tk.SOLID, borderwidth=1)
+        self._port_settings_frame = _PortSettingsFrame(self, text='Port settings', relief=tk.SOLID, borderwidth=1)
         self._port_settings_frame.grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
-        self._transmit_settings_frame = _TransmitSettingsFrame(parent, text='Transmitted data', relief=tk.SOLID,
+        self._transmit_settings_frame = _TransmitSettingsFrame(self, text='Transmitted data', relief=tk.SOLID,
                                                                borderwidth=1)
         self._transmit_settings_frame.grid(row=0, column=1, padx=5, pady=5, sticky=tk.W)
-        self._conclusion_frame = _ConclusionFrame(parent, self._settings_saved)
+        self._conclusion_frame = _ConclusionFrame(self, self._settings_saved)
         self._conclusion_frame.grid(row=1, column=1, sticky=tk.E)
         self._update_settings()
 
@@ -145,17 +147,17 @@ class Settings:
 
         self.settings['transmit_settings']['append'] = self._transmit_settings_frame.get_selection()
 
-    def open(self, root):
+    def open(self):
         self._port_settings_frame.port_list['values'] = self._port_settings_frame.get_port_list()
-        self._parent.transient(root)
-        self._parent.grab_set()
-        self._parent.lift()
-        self._parent.state('normal')
+        self.transient(self._parent)
+        self.grab_set()
+        self.lift()
+        self.state('normal')
 
         # Center window to parent window
-        xposition = root.winfo_rootx() + root.winfo_width() / 2 - self._parent.winfo_width() / 2
-        yposition = root.winfo_rooty() + root.winfo_height() / 2 - self._parent.winfo_height() / 2
-        self._parent.geometry("+%d+%d" % (xposition, yposition))
+        xposition = self._parent.winfo_rootx() + self._parent.winfo_width() / 2 - self.winfo_width() / 2
+        yposition = self._parent.winfo_rooty() + self._parent.winfo_height() / 2 - self.winfo_height() / 2
+        self.geometry("+%d+%d" % (xposition, yposition))
 
     def close(self):
         pass
@@ -188,5 +190,5 @@ class Settings:
         return None
 
     def _on_exit(self):
-        self._parent.state('withdrawn')
-        self._parent.grab_release()
+        self.state('withdrawn')
+        self.grab_release()
