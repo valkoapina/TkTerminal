@@ -43,7 +43,8 @@ class _Control(tk.Frame):
             self._serial_connection.close()
         except Exception as e:
             pass
-        self._parent.destroy()
+        self._parent.parent.remove()
+        #self._parent.destroy()
 
     def _update(self):
         connection_state = self._serial_connection.is_open()
@@ -103,10 +104,10 @@ class _TerminalSend(tk.Frame):
         self._serial_connection.write(self._terminal_entry.get())
 
 
-class ConnectionTab(ttk.Frame):
+class _ConnectionTab(ttk.Frame):
     def __init__(self, parent, *args, **kwargs):
         ttk.Frame.__init__(self, parent, *args, **kwargs)
-
+        self.parent = parent
         self.serial_connection = create_serial_connection()
 
         parent.grid_columnconfigure(0, weight=1)
@@ -132,25 +133,37 @@ class ConnectionTab(ttk.Frame):
                                     stopbits=self.settings.get('stopbits'), timeout=1)
 
 
-class ConnectionNotebook(object, ttk.Notebook):
+class _ConnectionNotebook(object, ttk.Notebook):
     def __init__(self, parent, *args, **kwargs):
         ttk.Notebook.__init__(self, parent, *args, **kwargs)
         self.bind_all("<<NotebookTabChanged>>", self._tab_changed_event)
-        super(ConnectionNotebook, self).add(ttk.Frame(self), text='+')
+        self.bind_all("<Double-Button-1>", self._mouse1_event)
+        super(_ConnectionNotebook, self).add(ttk.Frame(self), text='+')
         self._new_tab_index = self.index('current')
 
     def add(self, event):
-        tab = ConnectionTab(self)
-        super(ConnectionNotebook, self).insert(event.widget.index('end') - 1, tab, text='foo')
+        tab = _ConnectionTab(self)
+        super(_ConnectionNotebook, self).insert(event.widget.index('end') - 1, tab, text='New')
         self._new_tab_index = event.widget.index('current')
         self.select(self.index('end') - 2)
 
+    def remove(self):
+        current_index = self.index('current')
+        self._new_tab_index -= 1
+        if current_index > 0:
+            self.forget(current_index)
+            self.select(current_index - 1)
+        else:
+            self.select(current_index + 1)
+            self.forget(current_index)
+
     def _tab_changed_event(self, event):
-        print(event.widget.tab(event.widget.index('current')))
-        print(event.widget.index('current'))
-        print(self._new_tab_index)
         if event.widget.index('current') == self._new_tab_index:
             self.add(event)
+
+    def _mouse1_event(self, event):
+        if isinstance(event.widget, _ConnectionNotebook):
+            print(event.widget.index('current'))
 
 
 class MainGui(tk.Tk):
@@ -159,7 +172,7 @@ class MainGui(tk.Tk):
 
         self.wm_title('TkTerminal')
 
-        self.connections = ConnectionNotebook(self)
+        self.connections = _ConnectionNotebook(self)
         self.connections.grid(row=0, column=0)
 
 
