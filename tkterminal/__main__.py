@@ -3,6 +3,7 @@ import ttk as ttk
 from serialconnection import *
 from Queue import *
 from settings import *
+from Tkdnd import *
 
 
 class _Control(tk.Frame):
@@ -21,7 +22,7 @@ class _Control(tk.Frame):
         self.connection_button.grid(row=0, column=0, padx=(5, 5), pady=(5, 0), sticky=tk.W + tk.E)
         self.settings_button = ttk.Button(self, text='Settings', command=self._open_settings_window_)
         self.settings_button.grid(row=0, column=1, padx=(5, 5), pady=(5, 0))
-        self.settings_button = ttk.Button(self, text='Exit', command=self._exit)
+        self.settings_button = ttk.Button(self, text='Close', command=self._close)
         self.settings_button.grid(row=0, column=2, padx=(5, 5), pady=(5, 0))
 
         self._update()
@@ -37,7 +38,7 @@ class _Control(tk.Frame):
     def _open_settings_window_(self):
         self._settings.open()
 
-    def _exit(self):
+    def _close(self):
         try:
             self._serial_connection.close()
         except Exception as e:
@@ -102,17 +103,16 @@ class _TerminalSend(tk.Frame):
         self._serial_connection.write(self._terminal_entry.get())
 
 
-class MainGui(tk.Tk):
-    def __init__(self, serial_connection):
-        tk.Tk.__init__(self)
-        self.serial_connection = serial_connection
+class ConnectionTab(ttk.Frame):
+    def __init__(self, parent, *args, **kwargs):
+        ttk.Frame.__init__(self, parent, *args, **kwargs)
 
-        self.wm_title('TkTerminal')
+        self.serial_connection = create_serial_connection()
+
+        parent.grid_columnconfigure(0, weight=1)
+        parent.grid_rowconfigure(1, weight=1)
 
         self.settings = Settings(self, self._settings_changed)
-
-        self.grid_columnconfigure(0, weight=1)
-        self.grid_rowconfigure(1, weight=1)
 
         self.control_frame = _Control(self, self.settings, self.serial_connection)
         self.control_frame.grid(row=0, column=0, sticky=tk.W + tk.E)
@@ -132,13 +132,43 @@ class MainGui(tk.Tk):
                                     stopbits=self.settings.get('stopbits'), timeout=1)
 
 
+class ConnectionNotebook(object, ttk.Notebook):
+    def __init__(self, parent, *args, **kwargs):
+        ttk.Notebook.__init__(self, parent, *args, **kwargs)
+        self.bind_all("<<NotebookTabChanged>>", self._tab_changed_event)
+        super(ConnectionNotebook, self).add(ttk.Frame(self), text='+')
+        self._new_tab_index = self.index('current')
+
+    def add(self, event):
+        tab = ConnectionTab(self)
+        super(ConnectionNotebook, self).insert(event.widget.index('end') - 1, tab, text='foo')
+        self._new_tab_index = event.widget.index('current')
+        self.select(self.index('end') - 2)
+
+    def _tab_changed_event(self, event):
+        print(event.widget.tab(event.widget.index('current')))
+        print(event.widget.index('current'))
+        print(self._new_tab_index)
+        if event.widget.index('current') == self._new_tab_index:
+            self.add(event)
+
+
+class MainGui(tk.Tk):
+    def __init__(self):
+        tk.Tk.__init__(self)
+
+        self.wm_title('TkTerminal')
+
+        self.connections = ConnectionNotebook(self)
+        self.connections.grid(row=0, column=0)
+
+
 def main(args=None):
     """The main routine."""
     if args is None:
         args = sys.argv[1:]
 
-    serial_connection = create_serial_connection()
-    gui = MainGui(serial_connection)
+    gui = MainGui()
 
     gui.mainloop()
 
