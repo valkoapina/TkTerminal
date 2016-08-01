@@ -74,8 +74,12 @@ class _TerminalReceive(tk.Frame):
 
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=1)
+        self._scrollbar = ttk.Scrollbar(self)
+        self._scrollbar.grid(row=0, column=1, sticky=tk.N + tk.S + tk.E, padx=(0, 5), pady=(5, 5))
         self._terminal_text = tk.Text(self, relief=tk.SUNKEN, borderwidth=3)
-        self._terminal_text.grid(row=0, column=0, sticky=tk.N + tk.S + tk.E + tk.W, padx=(5, 5), pady=(5, 5))
+        self._terminal_text.grid(row=0, column=0, sticky=tk.N + tk.S + tk.W + tk.E, padx=(5, 0), pady=(5, 5))
+        self._terminal_text.config(yscrollcommand=self._scrollbar.set)
+        self._scrollbar.config(command=self._terminal_text.yview)
 
         self._poll_received_data()
 
