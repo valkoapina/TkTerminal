@@ -44,7 +44,6 @@ class _Control(tk.Frame):
         except Exception as e:
             pass
         self._parent.parent.remove()
-        #self._parent.destroy()
 
     def _update(self):
         connection_state = self._serial_connection.is_open()
@@ -110,8 +109,8 @@ class _ConnectionTab(ttk.Frame):
         self.parent = parent
         self.serial_connection = create_serial_connection()
 
-        parent.grid_columnconfigure(0, weight=1)
-        parent.grid_rowconfigure(1, weight=1)
+        self.columnconfigure(0, weight=1)
+        self.rowconfigure(1, weight=1)
 
         self.settings = Settings(self, self._settings_changed)
 
@@ -172,8 +171,10 @@ class MainGui(tk.Tk):
 
         self.wm_title('TkTerminal')
 
+        self.columnconfigure(0, weight=1)
+        self.rowconfigure(0, weight=1)
         self.connections = _ConnectionNotebook(self)
-        self.connections.grid(row=0, column=0)
+        self.connections.grid(row=0, column=0, sticky=tk.N + tk.S + tk.W + tk.E)
 
 
 def main(args=None):
